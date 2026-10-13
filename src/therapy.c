@@ -15,6 +15,11 @@ double _amplitude = 0.01;
 void set_therapy_tone_amplitude(double amplitude) { _amplitude = amplitude; }
 
 void therapy_tones_init(double freq, double *tones, TherapyMode mode) {
+    if (mode == TINNITUS_TONE_ONLY) {
+        tones[0] = freq;
+        return;
+    }
+
     tones[0] = floor(freq * 0.773 - 44.5);
     tones[1] = floor(freq * 0.903 - 21.5);
     tones[2] = floor(freq * 1.09 + 52);
@@ -24,9 +29,12 @@ void therapy_tones_init(double freq, double *tones, TherapyMode mode) {
         tones[4] = freq;
 }
 
-void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) {
+void play_therapy_tones(ma_waveform *sineWave, double frequency, TherapyMode mode) {
     int n_tones;
     switch (mode) {
+    case TINNITUS_TONE_ONLY:
+        n_tones = 1;
+        break;
     case THERAPY_TONES_ONLY:
         n_tones = 4;
         break;
@@ -41,8 +49,8 @@ void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) 
     therapy_tones_init(frequency, frequencies, mode);
 
     if (VERBOSE) {
-        printf("Therapy tones =");
-        for (int i = 0; i < 5; i++)
+        printf("Tones =");
+        for (int i = 0; i < n_tones; i++)
             printf(" %f", frequencies[i]);
         printf("\n");
     }
@@ -58,13 +66,17 @@ void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) 
                 ma_waveform_set_frequency(sineWave, frequencies[sequence[j]]);
                 nanosleep(&ts, NULL);
             }
-            fisher_yates_shuffle((int *)&sequence, n_tones);
+            fisher_yates_shuffle(sequence, n_tones);
         }
-        ts.tv_sec = 1;
-        ts.tv_nsec = 0;
-        ma_waveform_set_amplitude(sineWave, 0.0);
-        ma_waveform_set_frequency(sineWave, 0.0);
-        nanosleep(&ts, NULL);
-        ma_waveform_set_amplitude(sineWave, _amplitude);
+        // The tinnitus tone is meant to be heard continuously, so it gets no
+        // silence gap between batches.
+        if (mode != TINNITUS_TONE_ONLY) {
+            ts.tv_sec = 1;
+            ts.tv_nsec = 0;
+            ma_waveform_set_amplitude(sineWave, 0.0);
+            ma_waveform_set_frequency(sineWave, 0.0);
+            nanosleep(&ts, NULL);
+            ma_waveform_set_amplitude(sineWave, _amplitude);
+        }
     }
 }
