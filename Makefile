@@ -9,7 +9,9 @@ BIN_DIR := bin
 LIB := $(wildcard $(LIB_DIR)/*.c)
 SRC := $(wildcard $(SRC_DIR)/*.c)
 
-OBJS := $(patsubst $(LIB_DIR)/%.c,$(BUILD_DIR)/%.o, $(LIB))
+LIB_OBJS := $(patsubst $(LIB_DIR)/%.c,$(BUILD_DIR)/%.o, $(LIB))
+SRC_OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o, $(SRC))
+OBJS := $(SRC_OBJS) $(LIB_OBJS)
 DEPS := $(OBJS:.o=.d)
 
 CC := gcc
@@ -26,11 +28,17 @@ else
 	CFLAGS := $(CFLAGS) -O3 -DVERBOSE=1
 endif
 
-$(BIN_DIR)/$(NAME): $(SRC) $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $+ $(LDFLAGS)
+$(BIN_DIR)/$(NAME): $(OBJS) | $(BIN_DIR) $(BUILD_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(BUILD_DIR)/%.o: $(LIB_DIR)/%.c
+$(BUILD_DIR)/%.o: $(LIB_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(DVARS) $(DEPFLAGS) -o $@ -c $<
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -o $@ -c $<
+
+$(BIN_DIR) $(BUILD_DIR):
+	mkdir -p $@
 
 format:
 	$(FORMATTER) -style=file -i $(SRC_DIR)/*
