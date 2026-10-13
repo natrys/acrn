@@ -7,14 +7,12 @@
 #include "utils.h"
 
 #ifndef VERBOSE
-#   define VERBOSE 0
+#define VERBOSE 0
 #endif
 
 double _amplitude = 0.01;
 
-void set_therapy_tone_amplitude(double amplitude) {
-    _amplitude = amplitude;
-}
+void set_therapy_tone_amplitude(double amplitude) { _amplitude = amplitude; }
 
 void therapy_tones_init(double freq, double *tones, TherapyMode mode) {
     tones[0] = floor(freq * 0.773 - 44.5);
@@ -22,20 +20,21 @@ void therapy_tones_init(double freq, double *tones, TherapyMode mode) {
     tones[2] = floor(freq * 1.09 + 52);
     tones[3] = floor(freq * 1.395 + 26.5);
 
-    if (mode == TINNITUS_AND_THERAPY_TONES) tones[4] = freq;
+    if (mode == TINNITUS_AND_THERAPY_TONES)
+        tones[4] = freq;
 }
 
 void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) {
     int n_tones;
     switch (mode) {
-        case THERAPY_TONES_ONLY:
-            n_tones = 4;
-            break;
-        case TINNITUS_AND_THERAPY_TONES:
-            n_tones = 5;
-            break;
-        default:
-            n_tones = 4;
+    case THERAPY_TONES_ONLY:
+        n_tones = 4;
+        break;
+    case TINNITUS_AND_THERAPY_TONES:
+        n_tones = 5;
+        break;
+    default:
+        n_tones = 4;
     }
 
     double frequencies[5] = {0.0};
@@ -43,7 +42,8 @@ void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) 
 
     if (VERBOSE) {
         printf("Therapy tones =");
-        for (int i = 0; i < 5; i++) printf(" %f", frequencies[i]);
+        for (int i = 0; i < 5; i++)
+            printf(" %f", frequencies[i]);
         printf("\n");
     }
 
@@ -68,4 +68,3 @@ void play_therapy_tones(ma_waveform *sineWave, int frequency, TherapyMode mode) 
         ma_waveform_set_amplitude(sineWave, _amplitude);
     }
 }
-

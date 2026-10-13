@@ -24,7 +24,7 @@ CFLAGS := -D_GNU_SOURCE -D__STDC_WANT_LIB_EXT1__ -Wall -Wextra -Werror -Wno-erro
 LDFLAGS := -ldl -lm -lpthread
 
 ifeq ($(DEBUG), 1)
-	CFLAGS := $(CFLAGS) -g -O0 -Oz -DVERBOSE=1
+	CFLAGS := $(CFLAGS) -g -O0 -DVERBOSE=1
 else
 	CFLAGS := $(CFLAGS) -O3 -DVERBOSE=1
 endif
