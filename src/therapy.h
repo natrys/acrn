@@ -1,5 +1,8 @@
 #pragma once
 
+/* Playback level, shared by the therapy logic and the front-end's device setup. */
+#define TINNITUS_TONE_AMPLITUDE 0.01
+
 typedef enum TherapyMode {
     TINNITUS_TONE_ONLY,
     THERAPY_TONES_ONLY,

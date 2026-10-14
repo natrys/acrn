@@ -10,7 +10,7 @@
 #define VERBOSE 0
 #endif
 
-double _amplitude = 0.01;
+double _amplitude = TINNITUS_TONE_AMPLITUDE;
 
 void set_therapy_tone_amplitude(double amplitude) { _amplitude = amplitude; }
 
@@ -74,8 +74,10 @@ void play_therapy_tones(ma_waveform *sineWave, double frequency, TherapyMode mod
             ts.tv_sec = 1;
             ts.tv_nsec = 0;
             ma_waveform_set_amplitude(sineWave, 0.0);
-            ma_waveform_set_frequency(sineWave, 0.0);
             nanosleep(&ts, NULL);
+            // Frequency must come back before amplitude: at frequency 0 the
+            // phase is frozen, so raising amplitude first emits a DC blip.
+            ma_waveform_set_frequency(sineWave, frequencies[sequence[0]]);
             ma_waveform_set_amplitude(sineWave, _amplitude);
         }
     }

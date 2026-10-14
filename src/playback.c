@@ -9,8 +9,6 @@
 
 #include "therapy.h"
 
-#define TINNITUS_TONE_AMPLITUDE 0.01
-
 #define DEVICE_FORMAT ma_format_f32
 #define DEVICE_CHANNELS 2
 #define DEVICE_SAMPLE_RATE 48000
@@ -145,7 +143,6 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, signal_handler);
 
-    set_therapy_tone_amplitude(TINNITUS_TONE_AMPLITUDE);
     play_therapy_tones(&sineWave, frequency, mode);
 
     ma_device_uninit(&device);
