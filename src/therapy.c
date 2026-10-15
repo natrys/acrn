@@ -10,6 +10,20 @@
 #define VERBOSE 0
 #endif
 
+/* How long each therapy tone sounds, 1/6th of a second. A batch replays the
+ * full tone sequence ROUNDS_PER_BATCH times, which is 12 tones in therapy mode
+ * (2s) and 15 in both mode (2.5s). */
+#define TONE_DURATION_SEC 0
+#define TONE_DURATION_NS 166666667 /* round(1e9 / 6) */
+
+/* How many times per batch the full tone sequence is replayed, shuffled anew
+ * before each replay. Batches are separated by a silence pause. */
+#define ROUNDS_PER_BATCH 3
+
+/* Silent pause after each batch. */
+#define SILENCE_SEC 1
+#define SILENCE_NS 500000000
+
 double _amplitude = TINNITUS_TONE_AMPLITUDE;
 
 void set_therapy_tone_amplitude(double amplitude) { _amplitude = amplitude; }
@@ -59,9 +73,9 @@ void play_therapy_tones(ma_waveform *sineWave, double frequency, TherapyMode mod
     struct timespec ts;
 
     while (1) {
-        ts.tv_sec = 0;
-        ts.tv_nsec = 200000000;
-        for (int i = 0; i < 3; i++) {
+        ts.tv_sec = TONE_DURATION_SEC;
+        ts.tv_nsec = TONE_DURATION_NS;
+        for (int i = 0; i < ROUNDS_PER_BATCH; i++) {
             for (int j = 0; j < n_tones; j++) {
                 ma_waveform_set_frequency(sineWave, frequencies[sequence[j]]);
                 nanosleep(&ts, NULL);
@@ -71,8 +85,8 @@ void play_therapy_tones(ma_waveform *sineWave, double frequency, TherapyMode mod
         // The tinnitus tone is meant to be heard continuously, so it gets no
         // silence gap between batches.
         if (mode != TINNITUS_TONE_ONLY) {
-            ts.tv_sec = 1;
-            ts.tv_nsec = 0;
+            ts.tv_sec = SILENCE_SEC;
+            ts.tv_nsec = SILENCE_NS;
             ma_waveform_set_amplitude(sineWave, 0.0);
             nanosleep(&ts, NULL);
             // Frequency must come back before amplitude: at frequency 0 the
