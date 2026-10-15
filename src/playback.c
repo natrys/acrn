@@ -16,16 +16,17 @@
 #define MIN_AUDIBLE_FREQUENCY 20.0
 #define MAX_AUDIBLE_FREQUENCY 20000.0
 
-ma_waveform sineWave;
-ma_waveform_config sineWaveConfig;
+/* The therapy engine owns the tone schedule; the callback only asks it for the
+ * next chunk of PCM to play. */
+static TherapyToneEngine tone_engine;
 
 ma_device_config deviceConfig;
 ma_device device;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount) {
-    ma_waveform *pSineWave;
-    pSineWave = (ma_waveform *)pDevice->pUserData;
-    ma_waveform_read_pcm_frames(pSineWave, pOutput, frameCount, NULL);
+    TherapyToneEngine *pToneEngine;
+    pToneEngine = (TherapyToneEngine *)pDevice->pUserData;
+    therapy_engine_render(pToneEngine, pOutput, frameCount);
     (void)pInput;
 }
 
@@ -115,20 +116,14 @@ int main(int argc, char **argv) {
         fprintf(stderr, "warning: %g Hz is outside the audible range (%g-%g Hz)\n", frequency,
                 MIN_AUDIBLE_FREQUENCY, MAX_AUDIBLE_FREQUENCY);
 
-    sineWaveConfig =
-        ma_waveform_config_init(DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE,
-                                ma_waveform_type_sine, TINNITUS_TONE_AMPLITUDE, frequency);
-    if (ma_waveform_init(&sineWaveConfig, &sineWave) != MA_SUCCESS) {
-        fprintf(stderr, "Failed to initialize waveform.\n");
-        return -3;
-    }
+    therapy_engine_init(&tone_engine, frequency, mode, DEVICE_SAMPLE_RATE, DEVICE_CHANNELS);
 
     deviceConfig = ma_device_config_init(ma_device_type_playback);
     deviceConfig.playback.format = DEVICE_FORMAT;
     deviceConfig.playback.channels = DEVICE_CHANNELS;
     deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
     deviceConfig.dataCallback = data_callback;
-    deviceConfig.pUserData = &sineWave;
+    deviceConfig.pUserData = &tone_engine;
 
     if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
         fprintf(stderr, "Failed to open playback device.\n");
@@ -143,7 +138,12 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, signal_handler);
 
-    play_therapy_tones(&sineWave, frequency, mode);
+    /* The tones are produced by the device callback from here on, so all that
+     * is left is to keep the process alive until the user interrupts it. */
+    for (;;) {
+        struct timespec idle = {1, 0};
+        nanosleep(&idle, NULL);
+    }
 
     ma_device_uninit(&device);
 
